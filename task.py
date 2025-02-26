@@ -97,10 +97,11 @@ def calculate_metrics(model, dataloader):
     # Cálculo da matriz de confusão
     from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
     cm = confusion_matrix(all_targets, all_preds)
-    accuracy = (np.sum(np.diag(cm)) / np.sum(cm)).round(4)
-    precision = precision_score(all_targets, all_preds, average='macro', zero_division=0).round(4)
-    recall = recall_score(all_targets, all_preds, average='macro', zero_division=0).round(4)
-    f1 = f1_score(all_targets, all_preds, average='macro', zero_division=0).round(4)
+    accuracy = round(np.sum(np.diag(cm)) / np.sum(cm), 4)
+    precision = round(precision_score(all_targets, all_preds, average='macro', zero_division=0), 4)
+    recall = round(recall_score(all_targets, all_preds, average='macro', zero_division=0), 4)
+    f1 = round(f1_score(all_targets, all_preds, average='macro', zero_division=0), 4)
+
     
     return {
         "accuracy": accuracy,
