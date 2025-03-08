@@ -17,7 +17,7 @@ def start_server(server_id, port, peer_servers, min_clients):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, required=True, choices=["server", "client"], help="Modo de execução: 'server' ou 'client'")
-    parser.add_argument("--id", type=int, required=True, help="ID do servidor")
+    parser.add_argument("--id", type=int, help="ID do servidor")
     parser.add_argument("--port", type=int, help="Porta do servidor")
     parser.add_argument("--peers", type=str, nargs="+", help="Lista de peers (servidores) para comunicação")
     parser.add_argument("--server", type=str, help="Endereço do servidor para o cliente")
@@ -27,8 +27,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.mode == "server":
-        if not args.port or not args.peers:
-            raise ValueError("Para iniciar o servidor, forneça --port e --peers.")
+        if not args.port or not args.peers or not args.id:
+            raise ValueError("Para iniciar o servidor, forneça --id, --port e --peers.")
         start_server(args.id, args.port, args.peers, args.min_clients)
     elif args.mode == "client":
         if not args.server:
