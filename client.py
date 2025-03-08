@@ -15,6 +15,7 @@ class Client:
         self.server_url = server_url
         self.backup_url = ''
         self.rounds = 1 # Número de rodadas (inicializado com 1)
+        self.current_server_round = 1 # Rodada atual do servidor
         self.round_atual = 0
         self.register_with_server()
 
@@ -232,7 +233,7 @@ class Client:
         }
         
         try:
-            resp = requests.post(f"{self.server_url}/receive_model", json=data, timeout=5)
+            resp = requests.post(f"{self.server_url}/receive_model", json=data, timeout=300)
             if resp.status_code == 200:
                 print("[Cliente] Modelo enviado ao principal.")
             else:
@@ -256,15 +257,17 @@ class Client:
         try:
             resp = requests.get(f"{self.server_url}/get_rounds", timeout=15)
             if resp.status_code == 200:
-                return resp.json().get("total_rounds", 1)
+                return resp.json().get("current_round", 1), resp.json().get("total_rounds", 1)
         except requests.exceptions.RequestException:
             print(f"[Cliente] Falha ao obter rodadas do servidor.")
         return 1  # Caso falhe, assume 1 rodada por segurança
 
     def start(self):
         """Executa o ciclo completo de treinamento."""
-        self.rounds = self.get_server_rounds()
-        for round in range(1, self.rounds + 1):
+
+        self.current_server_round, self.rounds = self.get_server_rounds()
+
+        for round in range(self.current_server_round, self.rounds + 1):
             self.round_atual = round
             print(f"\n[Cliente] Rodada {round}/{self.rounds}")
             

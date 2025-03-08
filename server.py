@@ -42,7 +42,7 @@ class Server:
         self.aggregation_buffer = {}
         self.round_active = False
         self.heartbeat_interval = 30
-        self.total_rounds = 10
+        self.total_rounds = 5
         
         # Configuração do logger
         self.logger = logging.getLogger(f"server_{server_id}")
@@ -62,7 +62,7 @@ class Server:
         self.health_checker.start()
 
     def log_round_info(self, round_number, metrics):
-        num_clients = len(self.registered_clients)
+        num_clients = self.registered_clients_count
         total_rounds = self.total_rounds
         num_peers = len(self.get_full_peer_list())
         
@@ -248,7 +248,7 @@ class Server:
         from task import calculate_metrics
         metrics = calculate_metrics(self.model, test_loader)
         print(f"[Servidor {self.server_id}] Resultados da avaliação:")
-        print(f'Clientes {list(self.registered_clients)}')
+        print(f'Qtde de Clientes {len(self.aggregation_buffer[max(self.current_round - 1, 0)])}')
         print(f"  Acurácia: {metrics['accuracy']:.4f}")
         print(f"  Precisão: {metrics['precision']:.4f}")
         print(f"  Recall:   {metrics['recall']:.4f}")
@@ -280,9 +280,6 @@ class Server:
 
 
     def start_round(self):
-        if self.registered_clients_count > self.min_clients:
-            print('Total de clientes registrados maior que o mínimo necessário, atualizando mínimo para próximas rodadas...')
-            self.min_clients = self.registered_clients_count
 
         self.current_round += 1
         self.round_active = True
@@ -442,7 +439,7 @@ def register_client():
 
 @app.route('/get_rounds', methods=['GET'])
 def get_rounds():
-    return jsonify({"total_rounds": server_instance.total_rounds})
+    return jsonify({"current_round": server_instance.current_round, "total_rounds": server_instance.total_rounds})
 
 
 @app.route('/round_status', methods=['GET'])
