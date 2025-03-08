@@ -1,5 +1,7 @@
 import subprocess
 import time
+import urllib.parse
+
 
 def start_clients_for_server(server_address, base_id, num_clients):
     processes = []
@@ -19,14 +21,26 @@ def start_clients_for_server(server_address, base_id, num_clients):
         time.sleep(0.2)
     return processes
 
+def get_port_from_url(url):
+    url = url.strip()  # Remove espaços extras, se houver
+    parsed = urllib.parse.urlparse(url)
+    return parsed.port
+
 if __name__ == "__main__":
-    # Lista de servidores (endereços com as respectivas portas)
-    server_ports = [5000, 5001, 5002, 5003, 5004]
+    # Lista de servidores (endereços completos com IP e porta)
+    server_urls = [
+        'http://54.232.43.48:5000',
+        'http://56.124.104.22:5001',
+        # 'http://56.124.27.146:5002'
+        # Adicione outros se necessário, como 5003 e 5004
+    ]
+
     all_processes = []
     
-    for port in server_ports:
-        server_address = f"http://localhost:{port}"
-        # Define uma base para o ID do cliente para cada servidor (por exemplo, 100 para 5000, 200 para 5001, etc.)
+    for url in server_urls:
+        server_address = url.strip()
+        port = get_port_from_url(server_address)
+        # Define uma base para o ID do cliente para cada servidor (ex: 100 para porta 5000, 200 para 5001, etc.)
         base_id = (port - 5000 + 1) * 100  
         procs = start_clients_for_server(server_address, base_id, 10)
         all_processes.extend(procs)

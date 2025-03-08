@@ -35,7 +35,7 @@ class Server:
         self.secondary_peers: Set[str] = set("")
         self.inactive_peers: Dict[str, float] = {}
         self.min_clients = min_clients
-        self.registered_clients = set()
+        self.registered_clients_count = 0   # Contador de registros
         self.lost_peers: Set[str] = set("")
         self.round_clients = {}  # Armazena os clientes por rodada
         self.current_round = 0
@@ -280,6 +280,10 @@ class Server:
 
 
     def start_round(self):
+        if self.registered_clients_count > self.min_clients:
+            print('Total de clientes registrados maior que o mínimo necessário, atualizando mínimo para próximas rodadas...')
+            self.min_clients = self.registered_clients_count
+
         self.current_round += 1
         self.round_active = True
         self.aggregation_buffer = {}
@@ -350,7 +354,6 @@ def receive_model():
         return jsonify({"status": "error", "message": "Servidor não inicializado."}), 500
 
     data = request.json
-    client_id = data.get("client_id")
     model_params = data.get("model")
     current_round = data.get("round")
 
@@ -358,21 +361,17 @@ def receive_model():
         server_instance.aggregation_buffer[current_round] = []
     
     server_instance.aggregation_buffer[current_round].append(model_params)
-    server_instance.registered_clients.add(client_id)  # Garante que o cliente está registrado
 
     # Agrega se o número de modelos recebidos for igual ao número de clientes registrados
-    if len(server_instance.aggregation_buffer[current_round]) >= len(server_instance.registered_clients):
+    if len(server_instance.aggregation_buffer[current_round]) >= server_instance.min_clients:
         server_instance.collect_and_aggregate_models(server_instance.aggregation_buffer[current_round])
         metrics = server_instance.evaluate_model()
         server_instance.log_round_info(current_round, metrics)
         print(f"[Servidor {server_instance.server_id}] Rodada {current_round} concluída.")
-        
-        # Somente atualiza round e avalia se houver clientes (servidor primário)
-        if server_instance.registered_clients:
-            server_instance.current_round += 1
-            print(f"[Servidor {server_instance.server_id}] Rodada {server_instance.current_round} iniciada.")
-            # Opcional: chamar avaliação
-            server_instance.evaluate_model()
+
+        server_instance.current_round += 1
+        print(f"[Servidor {server_instance.server_id}] Rodada {server_instance.current_round} iniciada.")
+        server_instance.evaluate_model()
 
         # Se alcançou o total de rounds, pode comunicar aos peers ou resetar a rodada
         if server_instance.current_round > server_instance.total_rounds:
@@ -429,18 +428,14 @@ def receive_server_model():
 @app.route('/register', methods=['POST'])
 def register_client():
     global server_instance
-    data = request.json
-    client_id = data.get("client_id")
-    
-    server_instance.registered_clients.add(client_id)
+    server_instance.registered_clients_count += 1
 
     # Seleciona backup aleatório dentre os peers diretos (exceto o próprio servidor)
     available_backups = list(server_instance.direct_peers - {f"http://localhost:{server_instance.port}"})
     backup = random.choice(available_backups) if available_backups else ""
-
-    print(f"[Servidor {server_instance.server_id}] Cliente {client_id} registrado com backup {backup}.")
+    print(f"[Servidor {server_instance.server_id}] Cliente registrado. Total registrados: {server_instance.registered_clients_count}. Backup: {backup}.")
     
-    if len(server_instance.registered_clients) >= server_instance.min_clients and not server_instance.round_active:
+    if server_instance.registered_clients_count >= server_instance.min_clients and not server_instance.round_active:
         server_instance.start_round()
     
     return jsonify({"status": "registered", "backup": backup}), 200

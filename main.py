@@ -5,9 +5,8 @@ from client import Client
 from server import Server
 from task import get_model_parameters
 
-def start_client(client_id, server_address):  
-    print(f"[INFO] Iniciando cliente {client_id}")
-    client = Client(client_id, server_address)
+def start_client(server_address): 
+    client = Client(server_address)
     client.start()
 
 def start_server(server_id, port, peer_servers, min_clients):
@@ -18,7 +17,7 @@ def start_server(server_id, port, peer_servers, min_clients):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, required=True, choices=["server", "client"], help="Modo de execução: 'server' ou 'client'")
-    parser.add_argument("--id", type=int, required=True, help="ID do servidor/cliente")
+    parser.add_argument("--id", type=int, required=True, help="ID do servidor")
     parser.add_argument("--port", type=int, help="Porta do servidor")
     parser.add_argument("--peers", type=str, nargs="+", help="Lista de peers (servidores) para comunicação")
     parser.add_argument("--server", type=str, help="Endereço do servidor para o cliente")
@@ -34,4 +33,4 @@ if __name__ == "__main__":
     elif args.mode == "client":
         if not args.server:
             raise ValueError("Forneça --server")
-        start_client(args.id, args.server) 
+        start_client(args.server) 
