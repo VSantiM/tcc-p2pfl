@@ -11,8 +11,7 @@ from task import Net, get_model_parameters, set_model_parameters, train_model, c
 
 
 class Client:
-    def __init__(self, client_id: int, server_url: str):
-        self.client_id = client_id
+    def __init__(self, server_url: str):
         self.server_url = server_url
         self.backup_url = ''
         self.rounds = 1 # Número de rodadas (inicializado com 1)
@@ -22,7 +21,7 @@ class Client:
         # 1) Obter pipeline do servidor: OneHot, Scaler e 'target_classes'
         pipeline_info = self.request_pipeline()
         if pipeline_info is None:
-            raise RuntimeError(f"[Cliente {self.client_id}] Falha ao obter pipeline (servidor/backup).")
+            raise RuntimeError(f"[Cliente] Falha ao obter pipeline (servidor/backup).")
 
         encoder_categories = pipeline_info["encoder_categories"]
         scaler_mean = pipeline_info["scaler_mean"]
@@ -96,11 +95,11 @@ class Client:
 
     # ---------- MÉTODOS DE REGISTRO ----------
     def register_with_server(self):
-        """Registra o cliente no servidor principal e recebe o backup inicial."""
+        """Registra o cliente no servidor principal."""
         try:
             resp = requests.post(
                 f"{self.server_url}/register",
-                json={"client_id": self.client_id},
+                json={"register": True},
                 timeout=5
             )
             if resp.status_code == 200:
@@ -108,7 +107,7 @@ class Client:
                 backup = data.get("backup")
                 if backup:
                     self.backup_url = backup
-                print(f"[Cliente {self.client_id}] Registrado com backup: {self.backup_url}")
+                print(f"[Cliente] Registrado com backup: {self.backup_url}")
             else:
                 self.register_with_backup()
         except requests.exceptions.RequestException:
@@ -119,25 +118,25 @@ class Client:
         try:
             resp = requests.post(
                 f"{self.backup_url}/register",
-                json={"client_id": self.client_id},
-                timeout=5
+                json={"register": True},
+                timeout=15
             )
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Falha ao registrar-se no servidor de backup.")
+            print(f"[Cliente] Falha ao registrar-se no servidor de backup.")
 
     def update_backup_from_server(self):
         """Solicita ao servidor principal um novo backup."""
         try:
-            print(f"[Cliente {self.client_id}] Solicitando novo backup ao servidor principal")
-            resp = requests.get(f"{self.server_url}/get_backup", timeout=5)
+            print(f"[Cliente] Solicitando novo backup ao servidor principal")
+            resp = requests.get(f"{self.server_url}/get_backup", timeout=15)
             if resp.status_code == 200:
                 new_backup = resp.json().get("backup")
                 if new_backup:
-                    print(f"[Cliente {self.client_id}] Novo backup obtido do servidor principal: {new_backup}")
+                    print(f"[Cliente] Novo backup obtido do servidor principal: {new_backup}")
                     self.backup_url = new_backup
                     return True
         except requests.exceptions.RequestException as e:
-            print(f"[Cliente {self.client_id}] Falha ao solicitar backup do servidor principal: {e}")
+            print(f"[Cliente] Falha ao solicitar backup do servidor principal: {e}")
         return False
 
     def check_backup_health(self):
@@ -147,7 +146,7 @@ class Client:
             if resp.status_code == 200:
                 return True
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Backup {self.backup_url} falhou no health check.")
+            print(f"[Cliente] Backup {self.backup_url} falhou no health check.")
             self.update_backup_from_server()
         return False
 
@@ -156,14 +155,14 @@ class Client:
     def request_pipeline(self):
         """Tenta obter pipeline do servidor, se falhar, do backup."""
         try:
-            resp = requests.get(f"{self.server_url}/get_pipeline", timeout=5)
+            resp = requests.get(f"{self.server_url}/get_pipeline", timeout=15)
             if resp.status_code == 200:
                 return resp.json()
         except requests.exceptions.RequestException:
             pass
 
         try:
-            resp = requests.get(f"{self.backup_url}/get_pipeline", timeout=5)
+            resp = requests.get(f"{self.backup_url}/get_pipeline", timeout=15)
             if resp.status_code == 200:
                 return resp.json()
         except requests.exceptions.RequestException:
@@ -174,30 +173,30 @@ class Client:
     def request_model(self):
         """Obtém o modelo inicial do servidor."""
         try:
-            resp = requests.get(f"{self.server_url}/get_model", timeout=5)
+            resp = requests.get(f"{self.server_url}/get_model", timeout=15)
             if resp.status_code == 200:
                 model_params = resp.json().get("model")
                 self.receive_model(model_params)
-                print(f"[Cliente {self.client_id}] Modelo inicial recebido (principal).")
+                print(f"[Cliente] Modelo inicial recebido (principal).")
             else:
                 raise ValueError(f"Erro ao requisitar modelo. Status: {resp.status_code}")
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Falha ao requisitar modelo do principal. Tentando backup.")
+            print(f"[Cliente] Falha ao requisitar modelo do principal. Tentando backup.")
             self.check_backup_health()  # Verifica se o backup está saudável
             self.request_model_from_backup()
 
     def request_backup_model(self):
         """Tenta requisitar o modelo a partir do backup atualizado."""
         try:
-            resp = requests.get(f"{self.backup_url}/get_model", timeout=5)
+            resp = requests.get(f"{self.backup_url}/get_model", timeout=15)
             if resp.status_code == 200:
                 model_params = resp.json().get("model")
                 self.receive_model(model_params)
-                print(f"[Cliente {self.client_id}] Modelo inicial recebido (backup).")
+                print(f"[Cliente] Modelo inicial recebido (backup).")
             else:
                 raise ValueError(f"Erro ao requisitar modelo do backup. Status: {resp.status_code}")
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Falha ao requisitar modelo do backup.")
+            print(f"[Cliente] Falha ao requisitar modelo do backup.")
 
     # ---------- MÉTODOS DE MODELO ----------
     def receive_model(self, model_params):
@@ -213,13 +212,13 @@ class Client:
             raise ValueError(f"Formato inválido: {type(model_params)}")
 
         set_model_parameters(self.model, model_params)
-        print(f"[Cliente {self.client_id}] Modelo atualizado com sucesso.")
+        print(f"[Cliente] Modelo atualizado com sucesso.")
 
     def train_model_local(self):
         """Treina localmente e retorna parâmetros + métricas."""
         train_model(self.model, self.local_data, epochs=1, learning_rate=0.01)
         metrics = calculate_metrics(self.model, self.local_data)
-        print(f"[Cliente {self.client_id}] Treino concluído. Acurácia: {metrics['accuracy']}")
+        print(f"[Cliente] Treino concluído. Acurácia: {metrics['accuracy']}")
         return get_model_parameters(self.model), metrics
 
     # ---------- LÓGICA DE TREINAMENTO ----------
@@ -227,7 +226,6 @@ class Client:
         """Envia modelo + métricas para o servidor."""
         trained_params, metrics = self.train_model_local()
         data = {
-            "client_id": self.client_id,
             "model": trained_params,
             "metrics": metrics,
             "round": self.round_atual
@@ -236,31 +234,31 @@ class Client:
         try:
             resp = requests.post(f"{self.server_url}/receive_model", json=data, timeout=5)
             if resp.status_code == 200:
-                print(f"[Cliente {self.client_id}] Modelo enviado ao principal.")
+                print("[Cliente] Modelo enviado ao principal.")
             else:
-                print(f"[Cliente {self.client_id}] Erro ao enviar (status={resp.status_code}), tentando backup.")
+                print(f"[Cliente] Erro ao enviar (status={resp.status_code}), tentando backup.")
                 self.handle_failover(trained_params)
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Erro de conexão, tentando backup.")
+            print("[Cliente] Erro de conexão, tentando backup.")
             self.handle_failover(trained_params)
 
     def handle_failover(self, trained_params):
         """Tenta enviar para o servidor de backup."""
-        data = {"client_id": self.client_id, "model": trained_params}
+        data = {"model": trained_params}
         try:
-            resp = requests.post(f"{self.backup_url}/receive_model", json=data, timeout=5)
+            resp = requests.post(f"{self.backup_url}/receive_model", json=data, timeout=15)
             if resp.status_code == 200:
-                print(f"[Cliente {self.client_id}] Modelo enviado ao backup.")
+                print(f"[Cliente] Modelo enviado ao backup.")
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Falha ao enviar para backup.")
+            print(f"[Cliente] Falha ao enviar para backup.")
 
     def get_server_rounds(self):
         try:
-            resp = requests.get(f"{self.server_url}/get_rounds", timeout=5)
+            resp = requests.get(f"{self.server_url}/get_rounds", timeout=15)
             if resp.status_code == 200:
                 return resp.json().get("total_rounds", 1)
         except requests.exceptions.RequestException:
-            print(f"[Cliente {self.client_id}] Falha ao obter rodadas do servidor.")
+            print(f"[Cliente] Falha ao obter rodadas do servidor.")
         return 1  # Caso falhe, assume 1 rodada por segurança
 
     def start(self):
@@ -268,7 +266,7 @@ class Client:
         self.rounds = self.get_server_rounds()
         for round in range(1, self.rounds + 1):
             self.round_atual = round
-            print(f"\n[Cliente {self.client_id}] Rodada {round}/{self.rounds}")
+            print(f"\n[Cliente] Rodada {round}/{self.rounds}")
             
             # Aguardar início da rodada
             self._wait_for_round_start()
@@ -283,21 +281,20 @@ class Client:
             try:
                 resp = requests.get(f"{self.server_url}/round_status", timeout=2)
                 if resp.json().get("round_active") and resp.json().get("current_round") == self.round_atual:
-                    print(f'[DEBUG] Cliente {self.client_id} iniciando rodada {self.round_atual}')
+                    print(f'[DEBUG] Cliente iniciando rodada {self.round_atual}')
                     return
             except requests.exceptions.RequestException:
                 pass  # Tentar novamente
 
 
-def start_client(client_id: int, server_address: str, backup_address: str):  
-    print(f"[INFO] Iniciando cliente {client_id}")
-    client = Client(client_id, server_address, backup_address)
+def start_client(server_address: str, backup_address: str):  
+    print(f"[INFO] Iniciando cliente")
+    client = Client(server_address, backup_address)
     client.start()
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="Inicia um cliente federado.")
-    parser.add_argument("--id", type=int, required=True, help="ID do cliente")
     parser.add_argument("--server", type=str, required=True, help="Endereço do servidor")
     parser.add_argument("--backup", type=str, required=True, help="Endereço de backup")
 
