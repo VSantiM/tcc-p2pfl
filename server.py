@@ -468,6 +468,7 @@ def transmit_model_peers():
     global server_instance
     print(f'[SERVER] Enviando modelo para os peers vizinhos...')
     server_instance._communicate_with_peers()
+    return jsonify({"status": "ok", "message": "modelo enviado para peers."}), 200
 
 @app.route('/evaluate_model', methods=['GET'])
 def evaluate_model_route():
