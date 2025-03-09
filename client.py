@@ -282,7 +282,7 @@ class Client:
         """Aguarda até que a rodada atual esteja ativa."""
         while True:
             try:
-                resp = requests.get(f"{self.server_url}/round_status", timeout=5)
+                resp = requests.get(f"{self.server_url}/round_status", timeout=30)
                 if resp.json().get("round_active") and resp.json().get("current_round") == self.round_atual:
                     print(f'[DEBUG] Cliente iniciando rodada {self.round_atual}')
                     return
