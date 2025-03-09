@@ -1,0 +1,6 @@
+.git
+__pycache__
+README.md
+server_1.log
+.gitignore
+start_client.py

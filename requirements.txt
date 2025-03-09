@@ -1,6 +1,5 @@
 Flask
 requests
 numpy
-torch
 scikit-learn
 pandas

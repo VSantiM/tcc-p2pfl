@@ -1,0 +1,29 @@
+sudo yum update -y | sudo yum install -y git python pip
+git clone https://github.com/VSantiM/tcc-p2pfl.git | cd tcc-p2pfl | sudo pip install flask numpy pandas requests scikit-learn | sudo pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+python3 main.py --mode server --id 2 --min_clients 10 --port 5001 --peers http://54.232.43.48:5000
+
+
+--- do git
+git fetch || git reset --hard origin/master
+git reset --hard origin/master
+
+
+--- dos ips
+5000: http://54.207.9.88:5000
+5001: http://15.228.243.182:5001
+5002: http://18.231.112.152:5002
+5003: http://18.230.227.122:5003
+5004: http://54.233.45.77:5004
+5005: http://18.229.148.159:5005
+5006: http://18.229.148.159:5006
+5007: http://18.229.148.159:5007
+
+--- da inicialização
+(1) 5000: python3 main.py --mode server --id 1 --min_clients 10 --port 5000 --peers http://54.232.132.122:5001
+(2) 5001: python3 main.py --mode server --id 2 --min_clients 10 --port 5001 --peers http://18.229.148.159:5000 http://18.230.227.122:5003
+(3) 5002: python3 main.py --mode server --id 3 --min_clients 10 --port 5002 --peers http://18.230.227.122:5003
+(4) 5003: python3 main.py --mode server --id 4 --min_clients 10 --port 5003 --peers http://18.231.112.152:5002 http://54.232.132.122:5001 http://54.233.45.77:5004
+(5) 5004: python3 main.py --mode server --id 5 --min_clients 10 --port 5004 --peers http://18.229.148.159:5005 http://18.229.148.159:5006 http://18.229.148.159:5007
+(6) 5005: python3 main.py --mode server --id 6 --min_clients 10 --port 5005 --peers http://54.233.45.77:5004
+(7) 5006: python3 main.py --mode server --id 7 --min_clients 10 --port 5006 --peers http://54.233.45.77:5004 http://18.229.148.159:5007
+(8) 5007: python3 main.py --mode server --id 8 --min_clients 10 --port 5007 --peers http://18.229.148.159:5006 http://54.233.45.77:5004
