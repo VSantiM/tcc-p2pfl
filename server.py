@@ -247,8 +247,9 @@ class Server:
         # Avaliar o modelo utilizando a função calculate_metrics do task.py
         from task import calculate_metrics
         metrics = calculate_metrics(self.model, test_loader)
-        print(f"[Servidor {self.server_id}] Resultados da avaliação:")
-        print(f'Qtde de Clientes {len(self.aggregation_buffer[max(self.current_round - 1, 0)])}')
+        last_round = max(self.current_round - 1, 0)
+        print(f"[Servidor {self.server_id}] Resultados da avaliação - Rodada {self.current_round}:")
+        # print(f'Qtde de Clientes {len(self.aggregation_buffer[last_round])}')
         print(f"  Acurácia: {metrics['accuracy']:.4f}")
         print(f"  Precisão: {metrics['precision']:.4f}")
         print(f"  Recall:   {metrics['recall']:.4f}")
