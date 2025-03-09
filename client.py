@@ -217,7 +217,7 @@ class Client:
 
     def train_model_local(self):
         """Treina localmente e retorna parâmetros + métricas."""
-        train_model(self.model, self.local_data, epochs=1, learning_rate=0.01)
+        train_model(self.model, self.local_data, epochs=3, learning_rate=0.01)
         metrics = calculate_metrics(self.model, self.local_data)
         print(f"[Cliente] Treino concluído. Acurácia: {metrics['accuracy']}")
         return get_model_parameters(self.model), metrics
@@ -265,9 +265,9 @@ class Client:
     def start(self):
         """Executa o ciclo completo de treinamento."""
 
-        self.current_server_round, self.rounds = self.get_server_rounds()
+        round_atual_servidor, self.rounds = self.get_server_rounds()
 
-        for round in range(self.current_server_round, self.rounds + 1):
+        for round in range(round_atual_servidor, self.rounds + 1):
             self.round_atual = round
             print(f"\n[Cliente] Rodada {round}/{self.rounds}")
             
@@ -282,7 +282,7 @@ class Client:
         """Aguarda até que a rodada atual esteja ativa."""
         while True:
             try:
-                resp = requests.get(f"{self.server_url}/round_status", timeout=2)
+                resp = requests.get(f"{self.server_url}/round_status", timeout=5)
                 if resp.json().get("round_active") and resp.json().get("current_round") == self.round_atual:
                     print(f'[DEBUG] Cliente iniciando rodada {self.round_atual}')
                     return
