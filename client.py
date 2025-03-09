@@ -2,6 +2,7 @@
 import torch
 import requests
 import numpy as np
+import time
 
 from sklearn.datasets import fetch_kddcup99
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
@@ -282,10 +283,11 @@ class Client:
         """Aguarda até que a rodada atual esteja ativa."""
         while True:
             try:
-                resp = requests.get(f"{self.server_url}/round_status", timeout=30)
+                resp = requests.get(f"{self.server_url}/round_status", timeout=5)
                 if resp.json().get("round_active") and resp.json().get("current_round") == self.round_atual:
                     print(f'[DEBUG] Cliente iniciando rodada {self.round_atual}')
                     return
+                time.sleep(5)
             except requests.exceptions.RequestException:
                 pass  # Tentar novamente
 

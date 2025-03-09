@@ -24,7 +24,7 @@ class Net(nn.Module):
         return self.fc4(x)
 
 
-def train_model(model, dataloader, epochs=1, learning_rate=0.01):
+def train_model(model, dataloader, epochs=1, learning_rate=0.001):
     """Treina o modelo utilizando CrossEntropyLoss e SGD."""
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)

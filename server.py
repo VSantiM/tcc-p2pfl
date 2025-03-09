@@ -463,6 +463,12 @@ def get_backup():
         return jsonify({"backup": ""}), 200
 
 
+@app.route('/transmit_model_peers', methods=['GET'])
+def transmit_model_peers():
+    global server_instance
+    print(f'[SERVER] Enviando modelo para os peers vizinhos...')
+    server_instance._communicate_with_peers()
+
 @app.route('/evaluate_model', methods=['GET'])
 def evaluate_model_route():
     global server_instance
