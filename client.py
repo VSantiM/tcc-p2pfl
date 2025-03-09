@@ -218,7 +218,7 @@ class Client:
 
     def train_model_local(self):
         """Treina localmente e retorna parâmetros + métricas."""
-        train_model(self.model, self.local_data, epochs=3, learning_rate=0.001)
+        train_model(self.model, self.local_data, epochs=10, learning_rate=0.001)
         metrics = calculate_metrics(self.model, self.local_data)
         print(f"[Cliente] Treino concluído. Acurácia: {metrics['accuracy']}")
         return get_model_parameters(self.model), metrics
